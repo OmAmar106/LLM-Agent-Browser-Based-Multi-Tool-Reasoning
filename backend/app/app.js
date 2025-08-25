@@ -630,7 +630,23 @@ function renderLatexInMessages() {
 
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    // console.log('DOM loaded, initializing AI Agent Interface...');
+document.addEventListener('DOMContentLoaded', async () => {
+    
     new AIAgentInterface();
+    
+    const apiKey = prompt("Enter AI Pipe API Key (leave empty to use server default):");
+  
+    if (apiKey && apiKey.trim() !== "") {
+        try {
+        await fetch("/set-api-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ apiKey: apiKey.trim() })
+        });
+        // console.log("✅ API Key securely sent to backend");
+        } catch (err) {
+        // console.error("❌ Failed to set API Key", err);
+        }
+    }
+
 });

@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "bootstrap-alert": "^1.1.1",
+    "bootstrap-llm-provider": "1.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "vm2": "^3.9.19"

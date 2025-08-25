@@ -73,6 +73,3 @@ export async function generateAgentResponse(userMessage, apiKey, googleapi, mode
     // console.log(`${results.join('\n\n')}\n\nTools Used: `+JSON.stringify(toolsUsed))
     return `${results.join('\n\n')}\n\nTools Used: `+JSON.stringify(toolsUsed);
 }
-
-// Different AIs Support
-// That's it, then host and submit and move on to AI PPT Maker!
