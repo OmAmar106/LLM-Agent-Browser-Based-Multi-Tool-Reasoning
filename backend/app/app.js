@@ -1,3 +1,6 @@
+// import { llm_call } from "./llmcall.js";
+// import { runSandboxedJS, generateAgentResponse, GoogleSearch } from "./tools.js";
+
 class AIAgentInterface {
     constructor() {
         this.currentModel = 'gpt-4-turbo';
@@ -45,12 +48,12 @@ class AIAgentInterface {
 
         this.toolButtons = document.querySelectorAll('.tool-button');
 
-        console.log('Elements initialized:', {
-            messagesContainer: !!this.messagesContainer,
-            messageInput: !!this.messageInput,
-            sendButton: !!this.sendButton,
-            chatSidebar: !!this.chatSidebar
-        });
+        // console.log('Elements initialized:', {
+        //     messagesContainer: !!this.messagesContainer,
+        //     messageInput: !!this.messageInput,
+        //     sendButton: !!this.sendButton,
+        //     chatSidebar: !!this.chatSidebar
+        // });
     }
 
     bindEvents() {
@@ -70,7 +73,7 @@ class AIAgentInterface {
         if (this.modelSelector) {
             this.modelSelector.addEventListener('change', (e) => {
                 this.currentModel = e.target.value;
-                console.log('Model changed to:', this.currentModel);
+                // console.log('Model changed to:', this.currentModel);
             });
         }
 
@@ -228,7 +231,7 @@ class AIAgentInterface {
         this.chats.unshift(newChat);
         this.currentChatId = chatId;
 
-        console.log('New chat created:', newChat);
+        // console.log('New chat created:', newChat);
         return newChat;
     }
 
@@ -246,7 +249,7 @@ class AIAgentInterface {
             this.hideSidebar();
         }
 
-        console.log('Started new chat');
+        // console.log('Started new chat');
     }
 
     switchToChat(chatId) {
@@ -261,7 +264,7 @@ class AIAgentInterface {
             this.hideSidebar();
         }
 
-        console.log('Switched to chat:', chatId);
+        // console.log('Switched to chat:', chatId);
     }
 
     loadChatMessages(chat) {
@@ -326,7 +329,7 @@ class AIAgentInterface {
     }
 
     addMessageToChat(role, content, toolData = null) {
-        this.promptForApiKey();
+        // this.promptForApiKey();
 
         let chat = this.getCurrentChat();
 
@@ -357,12 +360,13 @@ class AIAgentInterface {
             button.classList.add('active');
         }
 
-        console.log('Tool selected:', this.selectedTool);
+        // console.log('Tool selected:', this.selectedTool);
     }
 
     async sendMessage() {
         if (!this.messageInput || !this.messagesContainer) return;
-        this.promptForApiKey();
+        // this.apiKey = this.promptForApiKey();
+        // this.googleapi = this.promptForGoogleApiKey();
         const message = this.messageInput.value.trim();
         if (!message || this.isProcessing) return;
 
@@ -378,94 +382,32 @@ class AIAgentInterface {
         this.messageInput.style.height = 'auto';
 
         const loadingId = this.addLoadingMessage();
-
-        // await this.delay(800 + Math.random() * 1200);
-
-        const agentResponse = await this.generateAgentResponse(message);
+        
+        const agentResponse = await this.getAgentResponse(message);
         this.updateLoadingMessage(loadingId, agentResponse);
         this.addMessageToChat('agent', agentResponse);
-
-        // if (this.selectedTool) {
-        //     // await this.delay(500);
-        //     await this.executeTool(this.selectedTool, message);
-
-        //     this.toolButtons.forEach(btn => btn.classList.remove('active'));
-        //     this.selectedTool = null;
-        // }
 
         this.isProcessing = false;
         this.updateSendButton(true);
         this.updateChatList();
     }
 
-    runSandboxedJS(code) {
-        return new Promise((resolve, reject) => {
-            const iframe = document.createElement("iframe");
-            iframe.style.display = "none";
-            iframe.setAttribute("sandbox", "allow-scripts");
-            document.body.appendChild(iframe);
-
-            function cleanup() {
-                window.removeEventListener("message", onMessage);
-                document.body.removeChild(iframe);
-            }
-
-            function onMessage(event) {
-                if (event.source !== iframe.contentWindow) return;
-                const { type, value } = event.data;
-
-                if (type === "log") {
-                    console.log("[sandbox]", ...value);
-                    return;
-                }
-                if (type === "error") {
-                    cleanup();
-                    reject(new Error(value));
-                }
-                if (type === "result") {
-                    cleanup();
-                    resolve(value);
-                }
-            }
-
-            window.addEventListener("message", onMessage);
-
-            const injected = `
-            <script>
-                (async () => {
-                    const send = (type, value) => parent.postMessage({ type, value }, "*");
-
-                    ["log","warn","error","info"].forEach(fn => {
-                        console[fn] = (...args) => {
-                            send("log", [fn, ...args]);
-                        };
-                    });
-
-                    try {
-                        const result = await (async function() {
-                            ${code}
-                        })();
-                        send("result", result);
-                    } catch (e) {
-                        send("error", e.message);
-                    }
-                })();
-            <\/script>
-        `;
-
-            iframe.srcdoc = injected;
+    async getAgentResponse(message) {
+        const response = await fetch('/api/agent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                model: this.currentModel
+            }),
         });
+
+        const data = await response.json();
+        return data.reply;
     }
 
-
-    async generateAgentResponse(userMessage) {
-
-        // this.runSandboxedJS(userMessage).then(result => { return result }).catch(err => { console.error(err); return err; })
-        // if i need a code execution output! -> provide runSandboxedJs, google search and llm call to the llm and ask which we should use.
-        // add the calls used to final answer
-        let arr = [];
-        return +" Tools Used: "+arr;
-    }
 
     addMessageToDOM(role, content, toolData = null) {
         if (!this.messagesContainer) return null;
@@ -626,11 +568,25 @@ class AIAgentInterface {
         }
         return apiKey;
     }
+
+    promptForGoogleApiKey() {
+        let googleApiKey = sessionStorage.getItem('googleApiKey');
+        if (!googleApiKey) {
+            googleApiKey = prompt('Please enter your Google API key to continue:');
+            if (googleApiKey && googleApiKey.trim() !== '') {
+                sessionStorage.setItem('googleApiKey', googleApiKey.trim());
+            } else {
+                alert('Google API key is required to use this app.');
+                return this.promptForGoogleApiKey();
+            }
+        }
+        return googleApiKey;
+    }
 }
 
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing AI Agent Interface...');
+    // console.log('DOM loaded, initializing AI Agent Interface...');
     new AIAgentInterface();
 });
