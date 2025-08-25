@@ -5,31 +5,27 @@ import dotenv from 'dotenv';
 import { llm_call } from './app/llmcall.js';
 import { runSandboxedJS, generateAgentResponse, GoogleSearch } from './app/tools.js';
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'app')));
 
-app.get('/api/env', (req, res) => {
-  res.json({
-    MY_VAR: process.env.MY_VAR || 'Not Set',
-  });
-});
-
 app.post('/api/agent', async (req, res) => {
+  // console.log(process.env)
   const { message, model } = req.body;
   try {
     const reply = await generateAgentResponse(
       message,
-      process.env.API_KEY,
+      process.env.AI_PIPE_KEY,
       process.env.GOOGLE_API_KEY,
-      model
+      model,
+      process.env.GOOGLE_CX
     );
     res.json({ reply });
   } catch (err) {

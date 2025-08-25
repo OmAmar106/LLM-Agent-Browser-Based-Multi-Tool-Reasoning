@@ -418,15 +418,20 @@ class AIAgentInterface {
         messageElement.id = messageId;
 
         const contentElement = document.createElement('div');
-        contentElement.className = 'message-content';
-        contentElement.textContent = content;
+        contentElement.className = 'message-content'; 
+
+        contentElement.innerHTML = this.formatMarkdown(content);
 
         messageElement.appendChild(contentElement);
         this.messagesContainer.appendChild(messageElement);
+
+        renderLatexInMessages();
+
         this.scrollToBottom();
 
         return messageId;
     }
+
 
     addLoadingMessage() {
         if (!this.messagesContainer) return null;
@@ -455,7 +460,8 @@ class AIAgentInterface {
             messageElement.className = 'message agent';
             const contentElement = messageElement.querySelector('.message-content');
             if (contentElement) {
-                contentElement.textContent = content;
+                contentElement.innerHTML = this.formatMarkdown(content);
+                renderLatexInMessages();
             }
         }
     }
@@ -528,13 +534,40 @@ class AIAgentInterface {
     }
 
     formatMarkdown(text) {
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/^â€¢ (.+)$/gm, '<li>$1</li>')
-            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-            .replace(/\n\n/g, '<br><br>')
-            .replace(/\n/g, '<br>');
+        // Handle code blocks (```language ... ```)
+        text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+            return `<pre><code class="language-${lang || ''}">${this.escapeHtml(code)}</code></pre>`;
+        });
+
+        // Inline code (`code`)
+        text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Bold and italic
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        // Lists
+        text = text.replace(/^â€¢ (.+)$/gm, '<li>$1</li>');
+        text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+        // Line breaks
+        text = text.replace(/\n\n/g, '<br><br>');
+        text = text.replace(/\n/g, '<br>');
+
+        return text;
+    }
+
+    // Helper to escape HTML in code blocks
+    escapeHtml(str) {
+        return str.replace(/[&<>"']/g, function(m) {
+            return ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[m];
+        });
     }
 
     updateSendButton(enabled) {
@@ -581,6 +614,17 @@ class AIAgentInterface {
             }
         }
         return googleApiKey;
+    }
+}
+
+function renderLatexInMessages() {
+    if (window.renderMathInElement) {
+        window.renderMathInElement(document.getElementById('messagesContainer'), {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
     }
 }
 
