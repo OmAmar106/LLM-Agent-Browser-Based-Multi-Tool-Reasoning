@@ -20,6 +20,10 @@ A **minimal JavaScript-based LLM agent** that can query a language model, execut
 
 ## Screenshots
 
+<img width="1849" height="929" alt="image" src="https://github.com/user-attachments/assets/42dcc271-1888-4ca2-9ede-88cd01d0f254" />
+
+<img width="1849" height="929" alt="image" src="https://github.com/user-attachments/assets/2b2acd57-328b-4edb-9d72-00a8a3d1d1aa" />
+
 ## Installation
 
 1. Clone the repository:
